@@ -1,0 +1,80 @@
+# ---------------------------
+# Dependencies
+# ---------------------------
+node_modules/
+jspm_packages/
+
+# ---------------------------
+# Build output
+# ---------------------------
+dist/
+build/
+out/
+.vite/
+
+# ---------------------------
+# Logs
+# ---------------------------
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ---------------------------
+# Environment variables
+# ---------------------------
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ---------------------------
+# Editor / IDE junk
+# ---------------------------
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ---------------------------
+# System files
+# ---------------------------
+.DS_Store
+Thumbs.db
+
+# ---------------------------
+# Testing
+# ---------------------------
+coverage/
+*.lcov
+
+# ---------------------------
+# Misc
+# ---------------------------
+*.log
+*.bak
+*.tmp
+.cache/
+.eslintcache
+
+# ---------------------------
+# Optional (depending on tooling)
+# ---------------------------
+# TypeScript
+*.tsbuildinfo
+
+# Storybook
+storybook-static/
+
+# Next.js (in case you evolve your frontend)
+.next/
+
+# Optional lock files (if you’re consistent with one package manager)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
