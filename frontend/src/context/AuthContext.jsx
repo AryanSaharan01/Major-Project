@@ -1,58 +1,101 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { mockUsers } from '../data/mockData';
+import React, { createContext, useState, useCallback } from "react";
+import api from "../utils/api";
 
-const AuthContext = createContext(undefined);
+export const AuthContext = createContext();
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export function AuthProvider({ children }) {
+    const [user, setUser] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem("user") || "null");
+        } catch (error) {
+            console.error("Failed to parse user from localStorage:", error);
+            return null;
+        }
+    });
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+    const [token, setToken] = useState(() => localStorage.getItem("token"));
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-  useEffect(() => {
-    // Check for stored user on component mount
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+    const sendOTP = useCallback(async (email, role) => {
+        setLoading(true);
+        setError(null);
 
-  const login = async (email, password) => {
-    const foundUser = mockUsers.find(u => u.email === email && u.password === password);
-    if (foundUser) {
-      setUser(foundUser);
-      localStorage.setItem('currentUser', JSON.stringify(foundUser));
-      return true;
-    }
-    return false;
-  };
+        try {
+            const res = await api.post("/auth/send-otp", { email, role });
+            return { 
+                success: res.data.success, 
+                otp: res.data.otp 
+            };
+        } catch (err) {
+            setError(err.response?.data?.error || "Failed to send OTP");
+            return { 
+                success: false, 
+                error: err.response?.data?.error || "Failed to send OTP" 
+            };
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
+    const verifyOTP = useCallback(async (email, otp, role) => {
+        setLoading(true);
+        setError(null);
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('currentUser');
-  };
+        try {
+            const res = await api.post("/auth/verify-otp", { email, otp, role });
+            const { token, user } = res.data;
 
-  const updateUserProfile = (updatedData) => {
-    if (user) {
-      const updatedUser = { ...user, ...updatedData };
-      setUser(updatedUser);
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-    }
-  };
+            // Store auth data
+            localStorage.setItem("token", token);
+            localStorage.setItem("user", JSON.stringify(user));
+            
+            // Update state
+            setToken(token);
+            setUser(user);
 
-  const value = {
-    user,
-    login,
-    logout,
-    updateUserProfile,
-    isAuthenticated: !!user,
-  };
+            return { success: true, user };
+        } catch (err) {
+            const errorMessage = err.response?.data?.error || "Failed to verify OTP";
+            setError(errorMessage);
+            return { 
+                success: false, 
+                error: errorMessage 
+            };
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+    const logout = useCallback(() => {
+        try {
+            // Clear local storage
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            
+            // Reset state
+            setToken(null);
+            setUser(null);
+            setError(null);
+        } catch (err) {
+            console.error("Logout failed:", err);
+            setError("Failed to logout properly");
+        }
+    }, []);
+
+    return (
+        <AuthContext.Provider 
+            value={{ 
+                user, 
+                token, 
+                loading, 
+                error,
+                sendOTP, 
+                verifyOTP, 
+                logout 
+            }}
+        >
+            {children}
+        </AuthContext.Provider>
+    );
+}

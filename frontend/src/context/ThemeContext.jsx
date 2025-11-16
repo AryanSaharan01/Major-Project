@@ -1,42 +1,36 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useEffect, useState } from "react";
+import PropTypes from 'prop-types';
 
-const ThemeContext = createContext(undefined);
+export const ThemeContext = createContext();
 
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
-};
-
-export const ThemeProvider = ({ children }) => {
-  const [isDark, setIsDark] = useState(() => {
-    // Check localStorage first, then default to dark
-    const savedTheme = localStorage.getItem('theme');
-    return savedTheme ? savedTheme === 'dark' : true;
+export function ThemeProvider({ children }) {
+  const [dark, setDark] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("dark") || "false");
+    } catch (error) {
+      console.error("Failed to parse theme from localStorage:", error);
+      return false;
+    }
   });
 
   useEffect(() => {
-    // Save theme preference to localStorage
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    
-    // Apply theme to document
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    try {
+      localStorage.setItem("dark", JSON.stringify(dark));
+      document.documentElement.classList.toggle("dark", dark);
+    } catch (error) {
+      console.error("Failed to save theme to localStorage:", error);
     }
-  }, [isDark]);
+  }, [dark]);
 
-  const toggleTheme = () => {
-    setIsDark(!isDark);
-  };
+  const toggle = () => setDark(prevDark => !prevDark);
 
-  const value = {
-    isDark,
-    toggleTheme,
-  };
+  return (
+    <ThemeContext.Provider value={{ dark, toggle }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+ThemeProvider.propTypes = {
+  children: PropTypes.node.isRequired
 };
