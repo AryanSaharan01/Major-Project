@@ -1,200 +1,316 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
-
-// Auth Components
-import Login from './components/Auth/Login';
-
-// Landing Page
-import LandingPage from './components/LandingPage';
-
-// Layout Components
-import DashboardLayout from './components/Layout/DashboardLayout';
+import { NotificationProvider } from './context/NotificationContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Student Components
-import StudentDashboard from './components/Student/Dashboard';
-import StudentSubjects from './components/Student/Subjects';
-import StudentQuizzes from './components/Student/Quizzes';
-import StudentCodingSection from './components/Student/CodingSection';
-import StudentAnalytics from './components/Student/Analytics';
+// Public Pages
+import LandingPage from './pages/public/LandingPage';
+import LoginPage from './pages/auth/LoginPage';
+import OTPVerificationPage from './pages/auth/OTPVerificationPage';
 
-// Teacher Components
-import TeacherDashboard from './components/Teacher/Dashboard';
-import TeacherSubjectManagement from './components/Teacher/SubjectManagement';
-import TeacherCreateQuiz from './components/Teacher/CreateQuiz';
-import TeacherClassAnalytics from './components/Teacher/ClassAnalytics';
+// Teacher Pages
+import TeacherDashboard from './pages/teacher/TeacherDashboard';
+import TeacherSetup from './pages/teacher/TeacherSetup';
+import TaskCreation from './pages/teacher/TaskCreation';
+import TaskSubmissions from './pages/teacher/TaskSubmissions';
+import LivePreview from './pages/teacher/LivePreview';
+import StudentPerformance from './pages/teacher/StudentPerformance';
+import ClassAnalytics from './pages/teacher/ClassAnalytics';
+import SubjectManagement from './pages/teacher/SubjectManagement';
+import TeacherProfile from './pages/teacher/TeacherProfile';
+import SubjectAssignment from './pages/teacher/SubjectAssignment';
+import TeacherTaskSubmissions from './pages/teacher/TaskSubmissions';
+import SubmissionGrading from './pages/teacher/SubmissionGrading';
+import TeacherTasksList from './pages/teacher/TeacherTasksList';
 
-// Shared Components
-import Profile from './components/Profile';
+// Student Pages
+import StudentDashboard from './pages/student/StudentDashboard';
+import StudentSubjects from './pages/student/StudentSubjects';
+import StudentTasks from './pages/student/StudentTasks';
+// import TaskAttempt from './pages/student/TaskAttempt';
+import StudentAnalytics from './pages/student/StudentAnalytics';
+import Leaderboard from './pages/student/Leaderboard';
+import StudentProfile from './pages/student/StudentProfile';
+import StudentSubjectDetails from './pages/student/StudentSubjectDetails';
+import StudentTaskDetails from './pages/student/StudentTaskDetails';
+import StudentTaskAttempt from './pages/student/StudentTaskAttempt';
 
-const AppRoutes = () => {
-  const { isAuthenticated, user } = useAuth();
+// Components
+import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
+import NotificationToast from './components/NotificationToast';
 
-  // Redirect authenticated users to their appropriate dashboard
-  const getDefaultRoute = () => {
-    if (!isAuthenticated) return '/login';
-    return user?.role === 'student' ? '/dashboard/student/dashboard' : '/dashboard/teacher/dashboard';
-  };
-
-  return (
-    <Routes>
-      {/* Public Routes */}
-      <Route 
-        path="/" 
-        element={isAuthenticated ? <Navigate to={getDefaultRoute()} replace /> : <LandingPage />} 
-      />
-      <Route 
-        path="/login" 
-        element={isAuthenticated ? <Navigate to={getDefaultRoute()} replace /> : <Login />} 
-      />
-
-      {/* Protected Routes */}
-      <Route 
-        path="/dashboard" 
-        element={
-          <ProtectedRoute>
-            <DashboardLayout />
-          </ProtectedRoute>
-        }
-      >
-        {/* Default redirect */}
-        <Route index element={<Navigate to={getDefaultRoute()} replace />} />
-        
-        {/* Student Routes */}
-        <Route
-          path="student/dashboard"
-          element={
-            <ProtectedRoute requiredRole="student">
-              <StudentDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="student/subjects"
-          element={
-            <ProtectedRoute requiredRole="student">
-              <StudentSubjects />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="student/quizzes"
-          element={
-            <ProtectedRoute requiredRole="student">
-              <StudentQuizzes />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="student/coding"
-          element={
-            <ProtectedRoute requiredRole="student">
-              <StudentCodingSection />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="student/analytics"
-          element={
-            <ProtectedRoute requiredRole="student">
-              <StudentAnalytics />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="student/profile"
-          element={
-            <ProtectedRoute requiredRole="student">
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Teacher Routes */}
-        <Route
-          path="teacher/dashboard"
-          element={
-            <ProtectedRoute requiredRole="teacher">
-              <TeacherDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="teacher/subjects"
-          element={
-            <ProtectedRoute requiredRole="teacher">
-              <TeacherSubjectManagement />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="teacher/upload"
-          element={
-            <ProtectedRoute requiredRole="teacher">
-              <div className="p-8 text-center">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Upload Resources</h1>
-                <p className="text-gray-600 dark:text-gray-300">Resource upload functionality will be implemented here.</p>
-              </div>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="teacher/create-quiz"
-          element={
-            <ProtectedRoute requiredRole="teacher">
-              <TeacherCreateQuiz />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="teacher/student-performance"
-          element={
-            <ProtectedRoute requiredRole="teacher">
-              <div className="p-8 text-center">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Student Performance</h1>
-                <p className="text-gray-600 dark:text-gray-300">Individual student performance analytics will be implemented here.</p>
-              </div>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="teacher/analytics"
-          element={
-            <ProtectedRoute requiredRole="teacher">
-              <TeacherClassAnalytics />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="teacher/profile"
-          element={
-            <ProtectedRoute requiredRole="teacher">
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
-      </Route>
-
-      {/* Catch all route */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  );
-};
-
-const App = () => {
+function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Router>
-          <div className="min-h-screen bg-white dark:bg-black">
-            <AppRoutes />
-          </div>
-        </Router>
+        <NotificationProvider>
+          <Router>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/auth/login" element={<LoginPage />} />
+              <Route path="/auth/verify-otp" element={<OTPVerificationPage />} />
+
+              {/* Teacher Routes */}
+              <Route
+                path="/teacher/setup"
+                element={
+                  <ProtectedRoute role="teacher">
+                    <TeacherSetup />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher/dashboard"
+                element={
+                  <ProtectedRoute role="teacher">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="teacher" />
+                      <TeacherDashboard />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher/tasks"
+                element={
+                  <ProtectedRoute role="teacher">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="teacher" />
+                      <TeacherTasksList />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher/tasks/create"
+                element={
+                  <ProtectedRoute role="teacher">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="teacher" />
+                      <TaskCreation />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher/live-preview"
+                element={
+                  <ProtectedRoute role="teacher">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="teacher" />
+                      <LivePreview />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher/analytics"
+                element={
+                  <ProtectedRoute role="teacher">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="teacher" />
+                      <StudentPerformance />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher/class-analytics"
+                element={
+                  <ProtectedRoute role="teacher">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="teacher" />
+                      <ClassAnalytics />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher/profile"
+                element={
+                  <ProtectedRoute role="teacher">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="teacher" />
+                      <TeacherProfile />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher/subjects"
+                element={
+                  <ProtectedRoute role="teacher">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="teacher" />
+                      <SubjectManagement />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher/subjects/assign"
+                element={
+                  <ProtectedRoute role="teacher">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="teacher" />
+                      <SubjectAssignment />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher/tasks/:taskId/submissions"
+                element={
+                  <ProtectedRoute role="teacher">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="teacher" />
+                      <TeacherTaskSubmissions />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher/submissions/:submissionId"
+                element={
+                  <ProtectedRoute role="teacher">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="teacher" />
+                      <SubmissionGrading />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Student Routes */}
+              <Route
+                path="/student/dashboard"
+                element={
+                  <ProtectedRoute role="student">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="student" />
+                      <StudentDashboard />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/subjects"
+                element={
+                  <ProtectedRoute role="student">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="student" />
+                      <StudentSubjects />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/tasks"
+                element={
+                  <ProtectedRoute role="student">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="student" />
+                      <StudentTasks />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/tasks/:taskId"
+                element={
+                  <ProtectedRoute role="student">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="student" />
+                      <StudentTaskDetails />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/tasks/:taskId/attempt"
+                element={
+                  <ProtectedRoute role="student">
+                    <StudentTaskAttempt />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/analytics"
+                element={
+                  <ProtectedRoute role="student">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="student" />
+                      <StudentAnalytics />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/leaderboard"
+                element={
+                  <ProtectedRoute role="student">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="student" />
+                      <Leaderboard />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/profile"
+                element={
+                  <ProtectedRoute role="student">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="student" />
+                      <StudentProfile />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/subjects/:subjectId"
+                element={
+                  <ProtectedRoute role="student">
+                    <Navbar />
+                    <div className="flex">
+                      <Sidebar role="student" />
+                      <StudentSubjectDetails />
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+            <NotificationToast />
+          </Router>
+        </NotificationProvider>
       </AuthProvider>
     </ThemeProvider>
   );
-};
+}
 
 export default App;
