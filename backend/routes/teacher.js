@@ -98,6 +98,34 @@ router.get(
         [teacher.id]
       );
 
+      // Calculate average performance of students enrolled under this teacher
+      const avgPerformanceResult = await pool.query(
+        `SELECT 
+           COALESCE(AVG(
+             CASE 
+               WHEN tq_count.total_questions > 0 
+               THEN (sub.total_marks_obtained::float / (tq_count.total_questions * 5)) * 100
+               ELSE 0
+             END
+           ), 0) as avg_performance
+         FROM lms.submissions sub
+         JOIN lms.students s ON sub.student_id = s.id
+         JOIN lms.enrollments e ON s.id = e.student_id
+         JOIN lms.teacher_subject_assignments tsa ON e.teacher_subject_assignment_id = tsa.id
+         JOIN lms.tasks t ON sub.task_id = t.id
+         LEFT JOIN (
+           SELECT task_id, COUNT(id) as total_questions
+           FROM lms.task_questions
+           GROUP BY task_id
+         ) tq_count ON t.id = tq_count.task_id
+         WHERE tsa.teacher_id = $1 
+         AND sub.submission_status = 'graded'
+         AND tq_count.total_questions > 0`,
+        [teacher.id]
+      );
+
+      const avgPerformance = parseFloat(avgPerformanceResult.rows[0]?.avg_performance) || 0;
+
       res.json({
         success: true,
         data: {
@@ -113,7 +141,8 @@ router.get(
             totalStudents: parseInt(studentsResult.rows[0].total) || 0,
             totalTasks: parseInt(tasksResult.rows[0].total) || 0,
             totalSubjects: subjectsResult.rows.length
-          }
+          },
+          avgPerformance: Math.round(avgPerformance * 10) / 10 // Round to 1 decimal place
         }
       });
     } catch (error) {
@@ -162,6 +191,51 @@ router.get("/subjects", verifyToken, authorizeTeacher, async (req, res) => {
   } catch (error) {
     console.error("❌ Teacher Subjects Error:", error);
     res.status(500).json({ error: "Failed to load subjects" });
+  }
+});
+
+// GET /api/teacher/students - Get all students enrolled under this teacher
+router.get("/students", verifyToken, authorizeTeacher, async (req, res) => {
+  try {
+    const { userId } = req.user;
+
+    // Get teacher ID first
+    const teacherResult = await pool.query(
+      "SELECT id FROM lms.teachers WHERE user_id = $1",
+      [userId]
+    );
+
+    if (teacherResult.rows.length === 0) {
+      return res.status(404).json({ error: "Teacher not found" });
+    }
+
+    const teacherId = teacherResult.rows[0].id;
+
+    // Get all students enrolled under this teacher's assignments
+    const students = await pool.query(
+      `SELECT DISTINCT 
+         s.id, 
+         s.name, 
+         s.roll_no, 
+         s.course, 
+         s.section,
+         u.email
+       FROM lms.students s
+       JOIN lms.users u ON s.user_id = u.id
+       JOIN lms.enrollments e ON s.id = e.student_id
+       JOIN lms.teacher_subject_assignments tsa ON e.teacher_subject_assignment_id = tsa.id
+       WHERE tsa.teacher_id = $1
+       ORDER BY s.name`,
+      [teacherId]
+    );
+
+    res.json({
+      success: true,
+      students: students.rows
+    });
+  } catch (error) {
+    console.error("❌ Teacher Students Error:", error);
+    res.status(500).json({ error: "Failed to load students" });
   }
 });
 
@@ -704,12 +778,20 @@ router.get('/submissions/:submissionId', verifyToken, authorizeTeacher, async (r
 
     const submission = submissionResult.rows[0];
 
-    // Get all answers with question details
+    // Get all answers with question details and Judge0 execution results
     const answersResult = await pool.query(
       `SELECT 
         sa.id as answer_id,
         sa.answer_code,
         sa.marks_awarded,
+        sa.code_output,
+        sa.execution_time,
+        sa.memory_used,
+        sa.execution_status,
+        sa.test_case_passed,
+        sa.expected_output as actual_expected_output,
+        sa.actual_output,
+        sa.error_message,
         tq.id as question_id,
         tq.question_number,
         tq.question_text,
